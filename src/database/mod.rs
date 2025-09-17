@@ -1,5 +1,7 @@
-// CLI 모듈들은 Phase 5에서 구현 예정
-// 현재는 빈 모듈로 두고 나중에 구현
+pub mod connection;
+pub mod migrations;
+pub mod todo_repository;
 
-// pub mod args;
-// pub mod commands;
+// 데이터베이스 관련 타입들을 재내보내기
+pub use connection::Database;
+pub use todo_repository::{TodoRepository, SqliteTodoRepository};
