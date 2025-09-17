@@ -22,6 +22,9 @@ pub enum TaskyError {
 
     #[error("할일 제목은 비어있을 수 없습니다")]
     EmptyTitle,
+    
+    #[error("잘못된 입력: {message}")]
+    InvalidInput { message: String },
 
     #[error("시스템 오류: {0}")]
     System(#[from] anyhow::Error),
