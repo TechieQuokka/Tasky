@@ -5,8 +5,9 @@ Tasky는 Rust로 개발된 명령줄 인터페이스(CLI) 기반의 작업 관�
 
 ## 기능
 - 작업 생성, 조회, 수정, 삭제
+- **작업 설명(description) 추가 및 상세 보기**
 - 우선순위 설정 (low, medium, high)
-- 마감일 관리
+- 마감일 관리 (다양한 날짜 형식 지원)
 - 상태 추적 (pending, done)
 - SQLite 데이터베이스를 통한 데이터 저장
 - 통계 및 진행률 확인
@@ -84,11 +85,18 @@ cargo run -- init --force
 
 ### 3. 기본 사용법
 ```bash
-# 작업 추가
-cargo run -- add "새로운 작업" --priority high --due 2024-12-31
+# 작업 추가 (설명 포함)
+cargo run -- add "새로운 작업" -d "작업에 대한 상세 설명" --priority high --due 2024-12-31
 
 # 작업 목록 조회
 cargo run -- list
+
+# 작업 상세 정보 보기
+cargo run -- show <ID>
+
+# 설명 포함 상세 목록 보기
+cargo run -- list --verbose
+cargo run -- list -v
 
 # 특정 조건으로 필터링
 cargo run -- list --status pending --priority high
@@ -102,8 +110,8 @@ cargo run -- done <ID>
 # 작업 상태 되돌리기
 cargo run -- undone <ID>
 
-# 작업 수정
-cargo run -- edit <ID> --title "수정된 제목" --priority medium
+# 작업 수정 (제목, 설명, 우선순위 등)
+cargo run -- edit <ID> --title "수정된 제목" --description "새로운 설명" --priority medium
 
 # 작업 삭제
 cargo run -- remove <ID>

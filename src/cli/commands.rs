@@ -14,8 +14,11 @@ pub fn execute(command: Commands) -> Result<()> {
     Commands::Add { title, description, priority, due } => {
       handle_add(&service, title, description, priority, due)
     }
-    Commands::List { status, priority, sort, order, today, overdue, urgent } => {
-      handle_list(&service, status, priority, sort, order, today, overdue, urgent)
+    Commands::List { status, priority, sort, order, today, overdue, urgent, verbose } => {
+      handle_list(&service, status, priority, sort, order, today, overdue, urgent, verbose)
+    }
+    Commands::Show { id } => {
+      handle_show(&service, id)
     }
     Commands::Done { ids } => {
       handle_done(&service, ids)
@@ -89,6 +92,7 @@ fn handle_list(
   today: bool,
   overdue: bool,
   urgent: bool,
+  verbose: bool,
 ) -> Result<()> {
 
   let todos = if today {
@@ -119,8 +123,57 @@ fn handle_list(
     return Ok(());
   }
 
-  print_todos_table(&todos);
+  if verbose {
+    print_todos_verbose(&todos);
+  } else {
+    print_todos_table(&todos);
+  }
   println!("\n총 {}개의 할일", todos.len().to_string().cyan());
+
+  Ok(())
+}
+
+fn handle_show(service: &impl TodoService, id: i64) -> Result<()> {
+  let todo = service.get_todo_by_id(id)?;
+
+  println!("\n{}", "📋 할일 상세 정보".bold().blue());
+  println!("{}", "─".repeat(50));
+
+  println!("ID: {}", todo.id.unwrap_or(0).to_string().cyan());
+  println!("제목: {}", todo.title.bold());
+
+  if let Some(desc) = &todo.description {
+    if !desc.trim().is_empty() {
+      println!("설명: {}", desc);
+    } else {
+      println!("설명: {}", "없음".dimmed());
+    }
+  } else {
+    println!("설명: {}", "없음".dimmed());
+  }
+
+  println!("상태: {} {}", todo.status.to_emoji(), todo.status.to_display_string());
+  println!("우선순위: {} {}", todo.priority.to_emoji(), todo.priority.to_display_string());
+
+  if let Some(due) = todo.due_date {
+    println!("마감일: {}", utils::format_date(&due).yellow());
+    if let Some(days) = todo.days_until_due() {
+      if days == 0 {
+        println!("⚠️  {}", "오늘이 마감일입니다!".red().bold());
+      } else if days < 0 {
+        println!("⚠️  {}일 지났습니다", (-days).to_string().red().bold());
+      } else {
+        println!("남은 일수: {}일", days.to_string().green());
+      }
+    }
+  } else {
+    println!("마감일: {}", "설정되지 않음".dimmed());
+  }
+
+  println!("생성일: {}", utils::format_date(&todo.created_at));
+  println!("수정일: {}", utils::format_date(&todo.updated_at));
+
+  println!("{}", "─".repeat(50));
 
   Ok(())
 }
@@ -600,4 +653,51 @@ fn print_todos_table(todos: &[Todo]) {
   }
   
   table.printstd();
+}
+
+fn print_todos_verbose(todos: &[Todo]) {
+  for (index, todo) in todos.iter().enumerate() {
+    if index > 0 {
+      println!("{}", "─".repeat(60).dimmed());
+    }
+
+    println!("ID: {} | 상태: {} {} | 우선순위: {} {}",
+      todo.id.unwrap_or(0).to_string().cyan(),
+      todo.status.to_emoji(),
+      todo.status.to_display_string(),
+      todo.priority.to_emoji(),
+      todo.priority.to_display_string()
+    );
+
+    if todo.status == Status::Done {
+      println!("제목: {}", todo.title.strikethrough());
+    } else if todo.is_overdue() {
+      println!("제목: ⚠️  {}", todo.title.red());
+    } else {
+      println!("제목: {}", todo.title.bold());
+    }
+
+    if let Some(desc) = &todo.description {
+      if !desc.trim().is_empty() {
+        println!("설명: {}", desc);
+      }
+    }
+
+    if let Some(due) = todo.due_date {
+      let formatted = utils::format_date(&due);
+      if todo.is_overdue() {
+        println!("마감일: {} {}", "⚠️".red(), formatted.red());
+      } else if let Some(days) = todo.days_until_due() {
+        if days <= 1 {
+          println!("마감일: {} ({}일 후)", formatted.yellow(), days);
+        } else {
+          println!("마감일: {} ({}일 후)", formatted, days);
+        }
+      } else {
+        println!("마감일: {}", formatted);
+      }
+    }
+
+    println!("생성일: {}", utils::format_date(&todo.created_at).dimmed());
+  }
 }

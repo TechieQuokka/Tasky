@@ -37,6 +37,12 @@ pub enum Commands {
     overdue: bool,
     #[arg(long)]
     urgent: bool,
+    #[arg(short, long)]
+    verbose: bool,
+  },
+
+  Show {
+    id: i64
   },
 
   Done {
