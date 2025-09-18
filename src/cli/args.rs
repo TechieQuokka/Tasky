@@ -40,7 +40,7 @@ pub enum Commands {
   },
 
   Done {
-    id: i64
+    ids: Vec<i64>
   },
 
   Undone {

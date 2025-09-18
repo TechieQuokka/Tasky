@@ -9,7 +9,11 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(gh repo create:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(rm:*)",
+      "Bash(git pull:*)",
+      "Bash(cargo build:*)",
+      "Bash(./target/release/tasky list:*)"
     ],
     "deny": [],
     "ask": []

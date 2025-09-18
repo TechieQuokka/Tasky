@@ -17,8 +17,8 @@ pub fn execute(command: Commands) -> Result<()> {
     Commands::List { status, priority, sort, order, today, overdue, urgent } => {
       handle_list(&service, status, priority, sort, order, today, overdue, urgent)
     }
-    Commands::Done { id } => {
-      handle_done(&service, id)
+    Commands::Done { ids } => {
+      handle_done(&service, ids)
     }
     Commands::Undone { id } => {
       handle_undone(&service, id)
@@ -125,10 +125,39 @@ fn handle_list(
   Ok(())
 }
 
-fn handle_done (service: &impl TodoService, id: i64) -> Result<()> {
-  let todo = service.complete_todo(id)?;
-  println!("{} 할일을 완료했습니다!", "✅".green());
-  println!("  제목: {}", todo.title.strikethrough());
+fn handle_done (service: &impl TodoService, ids: Vec<i64>) -> Result<()> {
+  if ids.is_empty() {
+    println!("{} 완료할 할일 ID를 입력해주세요.", "⚠️".yellow());
+    return Ok(());
+  }
+
+  let mut completed_count = 0;
+  let mut errors = Vec::new();
+
+  for id in ids {
+    match service.complete_todo(id) {
+      Ok(todo) => {
+        println!("{} 할일을 완료했습니다!", "✅".green());
+        println!("  ID: {}, 제목: {}", id.to_string().cyan(), todo.title.strikethrough());
+        completed_count += 1;
+      }
+      Err(e) => {
+        errors.push((id, e));
+      }
+    }
+  }
+
+  if !errors.is_empty() {
+    println!("\n{} 완료 실패한 할일:", "❌".red());
+    for (id, error) in errors {
+      println!("  ID {}: {}", id.to_string().cyan(), error);
+    }
+  }
+
+  if completed_count > 0 {
+    println!("\n총 {}개의 할일을 완료했습니다.", completed_count.to_string().green());
+  }
+
   Ok(())
 }
 

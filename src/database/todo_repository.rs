@@ -73,12 +73,12 @@ impl<'a> SqliteTodoRepository<'a> {
     }
 
     if let Some(due_before) = filter.due_before {
-      conditions.push("due_date < ?".to_string());
+      conditions.push("due_date <= ?".to_string());
       params.push(Box::new(due_before));
     }
 
     if let Some(due_after) = filter.due_after {
-      conditions.push("due_date > ?".to_string());
+      conditions.push("due_date >= ?".to_string());
       params.push(Box::new(due_after));
     }
 
