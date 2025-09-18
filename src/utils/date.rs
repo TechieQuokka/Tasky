@@ -3,17 +3,34 @@ use chrono::{DateTime, Local, NaiveDate, TimeZone, Utc};
 use crate::error::{Result, TaskyError};
 
 pub fn parse_date(date_str: &str) -> Result<DateTime<Utc>> {
+    // 다양한 날짜 형식을 지원
+    let date_formats = vec![
+        "%Y-%m-%d",        // ISO 형식: 2024-12-31
+        "%m/%d/%Y",        // 미국 형식: 12/31/2024
+        "%d/%m/%Y",        // 유럽 형식: 31/12/2024
+        "%b %d, %Y",       // 자연스러운 형식: Dec 31, 2024
+        "%d %b %Y",        // 한국식: 31 Dec 2024
+        "%B %d, %Y",       // 전체 월 이름: December 31, 2024
+        "%d %B %Y",        // 전체 월 이름 한국식: 31 December 2024
+    ];
 
-  let naive_date = NaiveDate::parse_from_str(date_str, "%Y-%m-%d")
-      .map_err(|_| TaskyError::InvalidDateFormat { date: date_str.to_string(), })?;
+    let mut naive_date = None;
+    for format in &date_formats {
+        if let Ok(date) = NaiveDate::parse_from_str(date_str, format) {
+            naive_date = Some(date);
+            break;
+        }
+    }
 
-  
-  let local_datetime = Local
-      .from_local_datetime(&naive_date.and_hms_opt(0, 0, 0).unwrap())
-      .single()
-      .ok_or_else(|| TaskyError::InvalidDateFormat { date: date_str.to_string(), })?;
-  
-  Ok(local_datetime.with_timezone(&Utc))
+    let naive_date = naive_date
+        .ok_or_else(|| TaskyError::InvalidDateFormat { date: date_str.to_string() })?;
+
+    let local_datetime = Local
+        .from_local_datetime(&naive_date.and_hms_opt(0, 0, 0).unwrap())
+        .single()
+        .ok_or_else(|| TaskyError::InvalidDateFormat { date: date_str.to_string() })?;
+
+    Ok(local_datetime.with_timezone(&Utc))
 }
 
 pub fn format_datetime(dt: &DateTime<Utc>) -> String {
@@ -72,9 +89,31 @@ mod tests {
 
   #[test]
   fn test_parse_date() {
+    // ISO 형식
     let result = parse_date("2024-01-15");
     assert!(result.is_ok());
 
+    // 미국 형식
+    let result = parse_date("12/31/2024");
+    assert!(result.is_ok());
+
+    // 유럽 형식
+    let result = parse_date("31/12/2024");
+    assert!(result.is_ok());
+
+    // 자연스러운 형식
+    let result = parse_date("Dec 31, 2024");
+    assert!(result.is_ok());
+
+    // 한국식
+    let result = parse_date("31 Dec 2024");
+    assert!(result.is_ok());
+
+    // 전체 월 이름
+    let result = parse_date("December 31, 2024");
+    assert!(result.is_ok());
+
+    // 잘못된 형식
     let result = parse_date("invalid");
     assert!(result.is_err());
   }
