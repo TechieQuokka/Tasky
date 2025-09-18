@@ -18,7 +18,7 @@ Tasky는 Rust로 개발된 명령줄 인터페이스(CLI) 기반의 작업 관�
 
 #### 방법 1: 컴파일된 실행파일 다운로드 (추천)
 
-**📋 빠른 설치를 원한다면**: [quick-start.md](quick-start.md) 가이드를 참조하세요!
+**📋 빠른 설치를 원한다면**: [quick-start.md](docs/quick-start.md) 가이드를 참조하세요!
 
 [Releases 페이지](https://github.com/TechieQuokka/Tasky/releases)에서 운영체체에 맞는 실행파일을 다운로드하세요:
 
@@ -29,18 +29,27 @@ Tasky는 Rust로 개발된 명령줄 인터페이스(CLI) 기반의 작업 관�
 
 **Windows 설치 (PowerShell):**
 ```powershell
-# 1. 폴더 생성 및 파일 이동
-New-Item -ItemType Directory -Path "C:\tools\tasky" -Force
-Move-Item "다운로드경로\tasky-windows-x64.exe" "C:\tools\tasky\tasky.exe"
+# 1. 설치 경로 설정 (원하는 경로로 변경하세요!)
+$installPath = "C:\tools\tasky"  # 👈 여기를 원하는 경로로 변경
+$downloadFile = "$env:USERPROFILE\Downloads\tasky-windows-x64.exe"  # 👈 실제 다운로드 위치
 
-# 2. PATH 환경변수 설정
+# 2. 폴더 생성 및 파일 이동
+New-Item -ItemType Directory -Path $installPath -Force
+Move-Item $downloadFile "$installPath\tasky.exe"
+
+# 3. PATH 환경변수 설정
 $currentPath = [Environment]::GetEnvironmentVariable("PATH", "User")
-$newPath = $currentPath + ";C:\tools\tasky"
+$newPath = $currentPath + ";" + $installPath
 [Environment]::SetEnvironmentVariable("PATH", $newPath, "User")
 
-# 3. 새 PowerShell 창에서 테스트
-tasky --help
+# 4. 새 PowerShell 창에서 테스트
+# Write-Host "새 PowerShell 창을 열고 다음 명령어를 실행하세요:"
+# tasky --help
 ```
+
+> ⚠️ **중요**: 위 스크립트의 `$installPath`와 `$downloadFile` 경로를 실제 환경에 맞게 수정하세요!
+>
+> 자세한 설명은 [docs/quick-start.md](docs/quick-start.md)를 참조하세요.
 
 **Linux/macOS 설치:**
 ```bash
