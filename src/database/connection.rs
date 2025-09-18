@@ -17,6 +17,11 @@ impl Database {
     Ok(Database { conn })
   }
 
+  pub fn close(self) -> crate::Result<()> {
+    self.conn.close().map_err(|(_, e)| e)?;
+    Ok(())
+  }
+
   pub fn default() -> crate::Result<Self> {
     let db_path = Self::default_path();
 

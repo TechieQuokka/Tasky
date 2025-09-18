@@ -35,6 +35,9 @@ pub fn execute(command: Commands) -> Result<()> {
     Commands::Init { force } => {
       handle_init(force)
     }
+    Commands::DbInfo => {
+      handle_db_info()
+    }
   }
 }
 
@@ -226,33 +229,266 @@ fn handle_stats(service: &impl TodoService) -> Result<()> {
 
 fn handle_init(force: bool) -> Result<()> {
   use crate::database::Database;
-  
+  use std::thread;
+  use std::time::Duration;
+
   let db_path = Database::default_path();
-  
+
   if db_path.exists() && !force {
       println!("{} 데이터베이스가 이미 존재합니다.", "⚠️".yellow());
       println!("기존 데이터베이스를 삭제하고 새로 만들려면 --force 옵션을 사용하세요.");
       return Ok(());
   }
-  
+
   if db_path.exists() && force {
-      std::fs::remove_file(&db_path)?;
-      println!("{} 기존 데이터베이스를 삭제했습니다.", "🗑️".red());
+      println!("{} 기존 데이터베이스를 삭제하는 중...", "🗑️".yellow());
+
+      // 파일 잠금 문제를 해결하기 위한 안전한 삭제 시도
+      let mut attempts = 0;
+      const MAX_ATTEMPTS: u32 = 5;
+
+      while attempts < MAX_ATTEMPTS {
+          match try_remove_database_safely(&db_path) {
+              Ok(_) => {
+                  println!("{} 기존 데이터베이스를 삭제했습니다.", "✅".green());
+                  break;
+              }
+              Err(e) => {
+                  attempts += 1;
+                  if attempts >= MAX_ATTEMPTS {
+                      // 마지막 시도에서도 실패하면 백업 전략 사용
+                      return handle_init_with_backup_strategy(&db_path);
+                  }
+
+                  println!("{} 삭제 시도 {}/{} 실패: {}",
+                      "⏳".yellow(), attempts, MAX_ATTEMPTS, e);
+
+                  // 잠시 대기 후 재시도
+                  thread::sleep(Duration::from_millis(500));
+              }
+          }
+      }
   }
-  
+
   // 데이터베이스 디렉토리 생성
   if let Some(parent) = db_path.parent() {
       std::fs::create_dir_all(parent)?;
   }
-  
+
   // 새 데이터베이스 생성 및 초기화
   let db = Database::new(&db_path)?;
   db.initialize()?;
-  
+
   println!("{} 데이터베이스를 초기화했습니다!", "🎉".green());
   println!("  경로: {}", db_path.display().to_string().cyan());
-  
+
   Ok(())
+}
+
+fn try_remove_database_safely(db_path: &std::path::Path) -> Result<()> {
+    use std::fs;
+
+    // 1. 파일이 읽기 전용인지 확인하고 권한 변경
+    if let Ok(metadata) = fs::metadata(db_path) {
+        if metadata.permissions().readonly() {
+            let mut perms = metadata.permissions();
+            perms.set_readonly(false);
+            fs::set_permissions(db_path, perms)?;
+        }
+    }
+
+    // 2. 관련 SQLite 파일들도 함께 삭제 시도
+    let extensions = ["-wal", "-shm", "-journal"];
+    for ext in &extensions {
+        let related_file = db_path.with_extension(format!("db{}", ext));
+        if related_file.exists() {
+            let _ = fs::remove_file(&related_file); // 오류 무시 - 메인 파일이 중요
+        }
+    }
+
+    // 3. 메인 데이터베이스 파일 삭제
+    fs::remove_file(db_path)?;
+
+    Ok(())
+}
+
+fn handle_init_with_backup_strategy(db_path: &std::path::Path) -> Result<()> {
+    use std::fs;
+
+    println!("{} 직접 삭제가 불가능합니다. 백업 전략을 사용합니다.", "⚠️".yellow());
+
+    // 사용자에게 도움말 제공
+    print_database_lock_help();
+
+    // 1. 임시 이름으로 기존 파일 이동
+    let backup_path = db_path.with_extension("db.backup");
+    let mut counter = 1;
+    let mut final_backup_path = backup_path.clone();
+
+    while final_backup_path.exists() {
+        final_backup_path = db_path.with_extension(format!("db.backup.{}", counter));
+        counter += 1;
+    }
+
+    match fs::rename(db_path, &final_backup_path) {
+        Ok(_) => {
+            println!("{} 기존 파일을 {}로 이동했습니다.",
+                "📁".blue(), final_backup_path.display());
+        }
+        Err(_) => {
+            // 이동도 실패하면 원본 경로를 유지하면서 새로운 데이터베이스 생성
+            println!("{} 파일 이동이 불가능합니다. 원본 파일을 유지하고 계속 진행합니다.", "⚠️".yellow());
+
+            // 기존 파일을 그대로 두고 새로운 연결로 시도
+            match try_create_database_with_existing_file(db_path) {
+                Ok(_) => return Ok(()),
+                Err(_) => {
+                    // 마지막 수단: 임시 경로에 생성
+                    println!("{} 대체 경로에 새 데이터베이스를 생성합니다.", "💡".blue());
+                    let temp_path = db_path.with_extension("db.new");
+                    return create_database_at_path(&temp_path);
+                }
+            }
+        }
+    }
+
+    // 2. 새 데이터베이스 생성
+    create_database_at_path(db_path)
+}
+
+fn print_database_lock_help() {
+    println!("\n{}", "💡 데이터베이스 파일 잠금 해결 방법:".bold().blue());
+    println!("  1. 실행 중인 다른 tasky 프로세스를 종료하세요");
+    println!("  2. Windows 작업 관리자에서 tasky.exe 프로세스를 찾아 종료하세요");
+    println!("  3. SQLite 브라우저나 DB 관리 도구가 파일을 열고 있다면 닫으세요");
+    println!("  4. 바이러스 백신이 파일을 스캔 중일 수 있으니 잠시 기다려보세요\n");
+}
+
+fn try_create_database_with_existing_file(db_path: &std::path::Path) -> Result<()> {
+    use crate::database::Database;
+
+    // 기존 파일이 있어도 새로운 연결로 덮어쓰기 시도
+    match Database::new(db_path) {
+        Ok(db) => {
+            // 테이블을 드롭하고 재생성
+            let _ = db.conn().execute_batch("
+                DROP TABLE IF EXISTS todos;
+                DROP TABLE IF EXISTS sqlite_sequence;
+            ");
+
+            db.initialize()?;
+            println!("{} 기존 데이터베이스를 재초기화했습니다!", "🎉".green());
+            println!("  경로: {}", db_path.display().to_string().cyan());
+            Ok(())
+        }
+        Err(e) => Err(e)
+    }
+}
+
+fn create_database_at_path(db_path: &std::path::Path) -> Result<()> {
+    use crate::database::Database;
+
+    // 데이터베이스 디렉토리 생성
+    if let Some(parent) = db_path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+
+    // 새 데이터베이스 생성 및 초기화
+    let db = Database::new(db_path)?;
+    db.initialize()?;
+
+    println!("{} 데이터베이스를 초기화했습니다!", "🎉".green());
+    println!("  경로: {}", db_path.display().to_string().cyan());
+
+    Ok(())
+}
+
+fn handle_db_info() -> Result<()> {
+    use crate::database::Database;
+
+    let db_path = Database::default_path();
+
+    println!("{}", "📊 데이터베이스 정보".bold().blue());
+    println!("{}", "─".repeat(50));
+
+    println!("경로: {}", db_path.display().to_string().cyan());
+
+    if !db_path.exists() {
+        println!("상태: {} 데이터베이스 파일이 존재하지 않습니다", "❌".red());
+        println!("{} 다음 명령어로 데이터베이스를 생성하세요:", "💡".yellow());
+        println!("  tasky init");
+        return Ok(());
+    }
+
+    // 파일 크기 확인
+    if let Ok(metadata) = std::fs::metadata(&db_path) {
+        let size = metadata.len();
+        println!("크기: {} bytes", size.to_string().green());
+
+        let modified = metadata.modified().unwrap_or(std::time::SystemTime::UNIX_EPOCH);
+        if let Ok(duration) = modified.duration_since(std::time::SystemTime::UNIX_EPOCH) {
+            let datetime = chrono::DateTime::from_timestamp(duration.as_secs() as i64, 0)
+                .unwrap_or_default();
+            println!("수정일: {}", datetime.format("%Y-%m-%d %H:%M:%S").to_string().yellow());
+        }
+    }
+
+    // 데이터베이스 연결 시도
+    match Database::new(&db_path) {
+        Ok(db) => {
+            println!("연결: {} 성공", "✅".green());
+
+            if db.is_initialized() {
+                println!("초기화: {} 완료", "✅".green());
+
+                // 테이블 정보 확인
+                match db.conn().prepare("SELECT COUNT(*) FROM todos") {
+                    Ok(mut stmt) => {
+                        if let Ok(count) = stmt.query_row([], |row| row.get::<_, i64>(0)) {
+                            println!("할일 개수: {}", count.to_string().cyan());
+                        }
+                    }
+                    Err(_) => {
+                        println!("할일 개수: {} 조회 실패", "❌".red());
+                    }
+                }
+            } else {
+                println!("초기화: {} 미완료", "❌".red());
+                println!("{} 다음 명령어로 데이터베이스를 초기화하세요:", "💡".yellow());
+                println!("  tasky init --force");
+            }
+        }
+        Err(e) => {
+            println!("연결: {} 실패", "❌".red());
+            println!("오류: {}", e.to_string().red());
+
+            if e.to_string().contains("database is locked") ||
+               e.to_string().contains("다른 프로세스가 파일을 사용") {
+                print_database_lock_help();
+            }
+        }
+    }
+
+    // 관련 파일들 확인
+    let related_files = ["-wal", "-shm", "-journal"];
+    let mut found_related = false;
+
+    for ext in &related_files {
+        let related_path = db_path.with_extension(format!("db{}", ext));
+        if related_path.exists() {
+            if !found_related {
+                println!("\n{}", "관련 파일:".bold());
+                found_related = true;
+            }
+            if let Ok(metadata) = std::fs::metadata(&related_path) {
+                println!("  {} ({} bytes)", related_path.display(), metadata.len());
+            }
+        }
+    }
+
+    println!("{}", "─".repeat(50));
+
+    Ok(())
 }
 
 fn print_todos_table(todos: &[Todo]) {

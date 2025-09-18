@@ -69,4 +69,5 @@ pub enum Commands {
     #[arg(long)]
     force: bool,
   },
+  DbInfo,
 }
