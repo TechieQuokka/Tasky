@@ -187,6 +187,9 @@ impl<'a> TodoRepository for SqliteTodoRepository<'a> {
       if let Some(due_date) = todo.due_date {
         existing_todo.due_date = Some(due_date);
       }
+      if let Some(status) = todo.status {
+        existing_todo.status = status;
+      }
 
       existing_todo.updated_at = Utc::now();
 
