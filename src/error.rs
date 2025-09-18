@@ -14,7 +14,7 @@ pub enum TaskyError {
     #[error("잘못된 상태: {status}. pending, done 중 하나여야 합니다")]
     InvalidStatus { status: String },
 
-    #[error("잘못된 날짜 형식: {date}. 지원되는 형식: YYYY-MM-DD, MM/DD/YYYY, DD/MM/YYYY, Dec 31, 2024, 31 Dec 2024")]
+    #[error("잘못된 날짜 형식: {date}. 지원되는 형식: YYYY-MM-DD, YYYY/MM/DD, MM/DD/YYYY, DD/MM/YYYY, Dec 31, 2024, 31 Dec 2024")]
     InvalidDateFormat { date: String },
 
     #[error("잘못된 정렬 기준: {sort_by}")]

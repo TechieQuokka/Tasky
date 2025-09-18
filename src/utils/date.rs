@@ -6,6 +6,7 @@ pub fn parse_date(date_str: &str) -> Result<DateTime<Utc>> {
     // 다양한 날짜 형식을 지원
     let date_formats = vec![
         "%Y-%m-%d",        // ISO 형식: 2024-12-31
+        "%Y/%m/%d",        // ISO 슬래시 형식: 2024/12/31
         "%m/%d/%Y",        // 미국 형식: 12/31/2024
         "%d/%m/%Y",        // 유럽 형식: 31/12/2024
         "%b %d, %Y",       // 자연스러운 형식: Dec 31, 2024
@@ -91,6 +92,10 @@ mod tests {
   fn test_parse_date() {
     // ISO 형식
     let result = parse_date("2024-01-15");
+    assert!(result.is_ok());
+
+    // ISO 슬래시 형식
+    let result = parse_date("2024/12/31");
     assert!(result.is_ok());
 
     // 미국 형식
