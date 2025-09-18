@@ -57,10 +57,15 @@ impl Database {
   }
 
   pub fn is_initialized(&self) -> bool {
-    let result = self.conn.execute_batch(
-      "SELECT name FROM sqlite_master WHERE type='table' AND name='todos';"
-    );
-    result.is_ok()
+    let mut stmt = match self.conn.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='todos'") {
+      Ok(stmt) => stmt,
+      Err(_) => return false,
+    };
+
+    match stmt.query_row([], |_| Ok(())) {
+      Ok(_) => true,
+      Err(_) => false,
+    }
   }
 
   pub fn transaction<F, R>(&mut self, f: F) -> crate::Result<R>

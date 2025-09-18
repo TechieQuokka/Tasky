@@ -18,7 +18,7 @@ pub enum Commands {
     description: Option<String>,
     #[arg(short, long, default_value = "medium")]
     priority: String,
-    #[arg(short = 'd', long)]
+    #[arg(long)]
     due: Option<String>,
   },
 
