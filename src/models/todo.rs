@@ -232,8 +232,8 @@ impl Todo {
 
   pub fn days_until_due(&self) -> Option<i64> {
     self.due_date.map(|due: DateTime<Utc>| {
-      let now = Utc::now();
-      (due - now).num_days()
+      let today_start = crate::utils::today_start();
+      (due - today_start).num_days()
     })
   }
 }
