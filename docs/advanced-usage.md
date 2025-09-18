@@ -111,20 +111,47 @@ tasky add "전체 월명 한국식" --due "31 December 2024"
 
 ### 날짜 기반 워크플로우 ✅ 지원됨
 
+#### Windows (PowerShell)
+```powershell
+# 이번 주 마감일 설정 (월요일 시작)
+for ($day = 1; $day -le 7; $day++) {
+    $date_str = (Get-Date).AddDays($day).ToString('yyyy-MM-dd')
+    tasky add "Day $day 작업" --due "$date_str"
+}
+```
+
+#### Linux/macOS (Bash/Zsh)
 ```bash
-# 이번 주 마감일 설정 (월요일 시작) ✅
+# 이번 주 마감일 설정 (월요일 시작)
 for day in {1..7}; do
   date_str=$(date -d "+$day days" +%Y-%m-%d)
   tasky add "Day $day 작업" --due "$date_str"
 done
+```
 
 # 월말 마감 작업들 ✅
+
+## Windows (PowerShell)
+```powershell
+# 월말 계산
+$month_end = (Get-Date -Day 1).AddMonths(1).AddDays(-1).ToString('yyyy-MM-dd')
+tasky add "월간 보고서" --due "$month_end" -p high
+
+# 오늘/내일 작업 간편 추가
+tasky add "오늘 할일" --due "$(Get-Date -Format 'yyyy-MM-dd')"
+tasky add "내일 할일" --due "$((Get-Date).AddDays(1).ToString('yyyy-MM-dd'))"
+```
+
+## Linux/macOS (Bash/Zsh)
+```bash
+# 월말 계산
 month_end=$(date -d "$(date +%Y-%m-01) +1 month -1 day" +%Y-%m-%d)
 tasky add "월간 보고서" --due "$month_end" -p high
 
-# 오늘/내일 작업 간편 추가 ✅
+# 오늘/내일 작업 간편 추가
 tasky add "오늘 할일" --due $(date +%Y-%m-%d)
 tasky add "내일 할일" --due $(date -d "+1 day" +%Y-%m-%d)
+```
 ```
 
 ---
@@ -204,9 +231,21 @@ function tadd() {
 }
 
 # 긴급 할일 추가 함수
+
+## Windows (PowerShell)
+```powershell
+function urgent($title) {
+  $tomorrow = (Get-Date).AddDays(1).ToString('yyyy-MM-dd')
+  tasky add "$title" -p high --due "$tomorrow"
+}
+```
+
+## Linux/macOS (Bash/Zsh)
+```bash
 function urgent() {
   tasky add "$1" -p high --due $(date -d "+1 day" +%Y-%m-%d)
 }
+```
 
 # 오늘 할일 빠른 조회
 function today() {
@@ -283,11 +322,29 @@ echo "긴급: $(tasky list --urgent | tail -1 | grep -o '[0-9]\+개' || echo '0�
 
 #### 2. 주간 리포트 생성
 ```bash
+## Windows (PowerShell)
+```powershell
+# weekly_report.ps1
+
+# 이번 주 월요일 계산
+$today = Get-Date
+$daysSinceMonday = ($today.DayOfWeek.value__ + 6) % 7
+$WEEK_START = $today.AddDays(-$daysSinceMonday).ToString('yyyy-MM-dd')
+
+# 다음 일요일 계산
+$daysUntilSunday = (7 - $today.DayOfWeek.value__) % 7
+if ($daysUntilSunday -eq 0) { $daysUntilSunday = 7 }
+$WEEK_END = $today.AddDays($daysUntilSunday).ToString('yyyy-MM-dd')
+```
+
+## Linux/macOS (Bash/Zsh)
+```bash
 #!/bin/bash
 # weekly_report.sh
 
 WEEK_START=$(date -d "last monday" +%Y-%m-%d)
 WEEK_END=$(date -d "next sunday" +%Y-%m-%d)
+```
 
 echo "=== 주간 리포트 ($WEEK_START ~ $WEEK_END) ==="
 echo ""

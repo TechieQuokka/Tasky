@@ -260,6 +260,18 @@ tasky add "할일" --due "31-12-2024"
 ## 🔧 고급 문제 해결
 
 ### 데이터베이스 백업 및 복원
+
+#### Windows (PowerShell)
+```powershell
+# 백업
+$date = Get-Date -Format 'yyyyMMdd'
+Copy-Item "$env:APPDATA\tasky\tasky.db" "C:\backup\tasky_$date.db"
+
+# 복원
+Copy-Item "C:\backup\tasky_20241220.db" "$env:APPDATA\tasky\tasky.db"
+```
+
+#### Linux/macOS (Bash/Zsh)
 ```bash
 # 백업
 cp ~/.local/share/tasky/tasky.db ~/backup/tasky_$(date +%Y%m%d).db
@@ -337,6 +349,23 @@ RUST_LOG=debug cargo run -- list
 ## ✅ 문제 예방
 
 ### 정기적인 백업
+#### Windows (PowerShell)
+```powershell
+# 주간 백업 스크립트 예시
+# weekly_backup.ps1
+
+$backup_dir = "$env:USERPROFILE\tasky_backups"
+New-Item -ItemType Directory -Path $backup_dir -Force
+
+$timestamp = Get-Date -Format 'yyyyMMdd_HHmmss'
+Copy-Item "$env:APPDATA\tasky\tasky.db" "$backup_dir\tasky_$timestamp.db"
+
+# 30일 이상 된 백업 삭제
+$cutoff = (Get-Date).AddDays(-30)
+Get-ChildItem "$backup_dir\tasky_*.db" | Where-Object { $_.LastWriteTime -lt $cutoff } | Remove-Item
+```
+
+#### Linux/macOS (Bash/Zsh)
 ```bash
 # 주간 백업 스크립트 예시
 #!/bin/bash

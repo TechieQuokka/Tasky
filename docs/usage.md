@@ -489,6 +489,20 @@ tasky stats
 - 🟢 **낮음**: 시간이 날 때 하는 작업
 
 ### 4. 효과적인 마감일 설정
+
+#### Windows (PowerShell)
+```powershell
+# 오늘
+tasky add "일일 보고서" --due "$(Get-Date -Format 'yyyy-MM-dd')"
+
+# 내일
+tasky add "미팅 준비" --due "$((Get-Date).AddDays(1).ToString('yyyy-MM-dd'))"
+
+# 다음 주 금요일
+tasky add "주간 리뷰" --due "2024-12-27"
+```
+
+#### Linux/macOS (Bash/Zsh)
 ```bash
 # 오늘
 tasky add "일일 보고서" --due $(date +%Y-%m-%d)

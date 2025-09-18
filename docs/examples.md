@@ -68,6 +68,11 @@ tasky add "Rust 프로젝트 실습" -d "간단한 CLI 도구 만들어보기" -
 tasky add "Rust 고급 개념 학습" -d "소유권, 라이프타임, 트레이트 등" -p low --due "2025-01-05"
 
 # 일일 학습 목표
+
+## Windows (PowerShell)
+tasky add "오늘의 Rust 학습" -d "1시간 동안 공식 문서 읽기" -p medium --due "$(Get-Date -Format 'yyyy-MM-dd')"
+
+## Linux/macOS (Bash/Zsh)
 tasky add "오늘의 Rust 학습" -d "1시간 동안 공식 문서 읽기" -p medium --due $(date +%Y-%m-%d)
 ```
 
@@ -200,7 +205,12 @@ tasky add "[Review] 프론트엔드 코드 리뷰" -d "팀원의 React 컴포넌
 
 # 팀 미팅 관련
 tasky add "스프린트 계획 미팅" -p high --due "2024-12-20 10:00"
-tasky add "일일 스탠드업" -p medium --due $(date +%Y-%m-%d)" 09:30"
+
+## Windows (PowerShell)
+tasky add "일일 스탠드업" -p medium --due "$(Get-Date -Format 'yyyy-MM-dd') 09:30"
+
+## Linux/macOS (Bash/Zsh)
+tasky add "일일 스탠드업" -p medium --due "$(date +%Y-%m-%d) 09:30"
 ```
 
 ### 지식 공유
