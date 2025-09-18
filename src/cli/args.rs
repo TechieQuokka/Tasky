@@ -27,6 +27,46 @@ pub enum Commands {
     status: Option<String>,
     #[arg(short, long)]
     priority: Option<String>,
-    
-  }
+    #[arg(long, default_value = "created")]
+    sort: String,
+    #[arg(long, default_value = "desc")]
+    order: String,
+    #[arg(long)]
+    today: bool,
+    #[arg(long)]
+    overdue: bool,
+    #[arg(long)]
+    urgent: bool,
+  },
+
+  Done {
+    id: i64
+  },
+
+  Undone {
+    id: i64
+  },
+
+  Remove {
+    id: i64
+  },
+
+  Edit {
+
+    id: i64,
+    #[arg(short, long)]
+    title: Option<String>,
+    #[arg(short, long)]
+    description: Option<String>,
+    #[arg(short, long)]
+    priority: Option<String>,
+    #[arg(long)]
+    due: Option<String>,
+  },
+
+  Stats,
+  Init {
+    #[arg(long)]
+    force: bool,
+  },
 }
