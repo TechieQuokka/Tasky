@@ -15,6 +15,37 @@ Tasky는 Rust로 개발된 명령줄 인터페이스(CLI) 기반의 작업 관�
 ## 빠른 시작
 
 ### 1. 설치
+
+#### 방법 1: 컴파일된 실행파일 다운로드 (추천)
+[Releases 페이지](https://github.com/TechieQuokka/Tasky/releases)에서 운영체제에 맞는 실행파일을 다운로드하세요:
+
+- **Windows (x64)**: `tasky-windows-x64.exe`
+- **Linux (x64)**: `tasky-linux-x64`
+- **macOS (Intel)**: `tasky-macos-x64`
+- **macOS (Apple Silicon)**: `tasky-macos-arm64`
+
+**Windows 설치:**
+1. `tasky-windows-x64.exe`를 다운로드
+2. 원하는 폴더에 저장 (예: `C:\tools\`)
+3. 해당 폴더를 환경변수 PATH에 추가
+4. 새 명령 프롬프트에서 `tasky --help` 실행
+
+**Linux/macOS 설치:**
+```bash
+# 다운로드 (Linux 예시)
+wget https://github.com/TechieQuokka/Tasky/releases/latest/download/tasky-linux-x64
+
+# 실행 권한 부여
+chmod +x tasky-linux-x64
+
+# /usr/local/bin으로 이동 (선택사항)
+sudo mv tasky-linux-x64 /usr/local/bin/tasky
+
+# 테스트
+tasky --help
+```
+
+#### 방법 2: 소스코드에서 빌드
 ```bash
 git clone https://github.com/TechieQuokka/Tasky.git
 cd Tasky

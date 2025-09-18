@@ -1,0 +1,192 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release'
+        required: true
+        default: 'v0.1.0'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build for ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            name: tasky-windows-x64.exe
+
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            name: tasky-linux-x64
+
+          - target: x86_64-apple-darwin
+            os: macos-latest
+            name: tasky-macos-x64
+
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            name: tasky-macos-arm64
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: ${{ matrix.target }}
+
+    - name: Install dependencies (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential
+
+    - name: Build
+      run: cargo build --release --target ${{ matrix.target }}
+
+    - name: Prepare binary (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        copy "target\${{ matrix.target }}\release\tasky.exe" "${{ matrix.name }}"
+
+    - name: Prepare binary (Unix)
+      if: matrix.os != 'windows-latest'
+      run: |
+        cp "target/${{ matrix.target }}/release/tasky" "${{ matrix.name }}"
+        chmod +x "${{ matrix.name }}"
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.name }}
+        path: ${{ matrix.name }}
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+      with:
+        path: artifacts
+
+    - name: List artifacts
+      run: find artifacts -type f
+
+    - name: Get tag name
+      id: tag
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+        else
+          echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.tag.outputs.tag }}
+        release_name: Tasky ${{ steps.tag.outputs.tag }}
+        body: |
+          ## 🎉 Tasky ${{ steps.tag.outputs.tag }} 릴리즈
+
+          ### 📦 다운로드
+          운영체제에 맞는 실행파일을 다운로드하세요:
+
+          - **Windows (x64)**: `tasky-windows-x64.exe`
+          - **Linux (x64)**: `tasky-linux-x64`
+          - **macOS (Intel)**: `tasky-macos-x64`
+          - **macOS (Apple Silicon)**: `tasky-macos-arm64`
+
+          ### 🚀 설치 방법
+
+          #### Windows
+          1. `tasky-windows-x64.exe`를 다운로드
+          2. 원하는 폴더에 저장 (예: `C:\tools\`)
+          3. 환경변수 PATH에 해당 폴더 추가
+          4. 새 명령 프롬프트에서 `tasky --help` 실행
+
+          #### Linux/macOS
+          ```bash
+          # 다운로드 (Linux 예시)
+          wget https://github.com/TechieQuokka/Tasky/releases/download/${{ steps.tag.outputs.tag }}/tasky-linux-x64
+
+          # 실행 권한 부여
+          chmod +x tasky-linux-x64
+
+          # /usr/local/bin으로 이동 (선택사항)
+          sudo mv tasky-linux-x64 /usr/local/bin/tasky
+
+          # 테스트
+          tasky --help
+          ```
+
+          ### ✨ 주요 기능
+          - 할일 생성, 수정, 삭제
+          - 우선순위 설정 (high, medium, low)
+          - 마감일 관리
+          - 상태 추적 (pending, done)
+          - 통계 및 진행률 확인
+          - 견고한 데이터베이스 관리
+
+          자세한 사용법은 [README](https://github.com/TechieQuokka/Tasky/blob/master/README.md)를 참조하세요.
+        draft: false
+        prerelease: false
+
+    - name: Upload Windows Binary
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: artifacts/tasky-windows-x64.exe/tasky-windows-x64.exe
+        asset_name: tasky-windows-x64.exe
+        asset_content_type: application/octet-stream
+
+    - name: Upload Linux Binary
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: artifacts/tasky-linux-x64/tasky-linux-x64
+        asset_name: tasky-linux-x64
+        asset_content_type: application/octet-stream
+
+    - name: Upload macOS Intel Binary
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: artifacts/tasky-macos-x64/tasky-macos-x64
+        asset_name: tasky-macos-x64
+        asset_content_type: application/octet-stream
+
+    - name: Upload macOS ARM Binary
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: artifacts/tasky-macos-arm64/tasky-macos-arm64
+        asset_name: tasky-macos-arm64
+        asset_content_type: application/octet-stream
