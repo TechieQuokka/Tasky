@@ -1,6 +1,6 @@
 [package]
 name = "tasky"
-version = "0.1.3"
+version = "0.1.4"
 edition = "2021"
 description = "개인용 할일 관리 CLI 도구"
 authors = ["Ryou"]
