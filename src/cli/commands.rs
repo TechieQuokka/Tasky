@@ -411,7 +411,18 @@ fn handle_db_info() -> Result<()> {
     println!("{}", "📊 데이터베이스 정보".bold().blue());
     println!("{}", "─".repeat(50));
 
-    println!("경로: {}", db_path.display().to_string().cyan());
+    // 환경변수 정보 표시
+    match std::env::var("TASKY_DB_PATH") {
+        Ok(custom_path) => {
+            println!("환경변수: {} 설정됨", "TASKY_DB_PATH".green());
+            println!("커스텀 경로: {}", custom_path.cyan());
+        }
+        Err(_) => {
+            println!("환경변수: {} 기본 경로 사용", "TASKY_DB_PATH".yellow());
+        }
+    }
+
+    println!("실제 경로: {}", db_path.display().to_string().cyan());
 
     if !db_path.exists() {
         println!("상태: {} 데이터베이스 파일이 존재하지 않습니다", "❌".red());

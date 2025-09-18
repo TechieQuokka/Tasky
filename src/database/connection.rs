@@ -39,6 +39,12 @@ impl Database {
   }
 
   pub fn default_path() -> PathBuf {
+    // 환경변수 TASKY_DB_PATH가 설정되어 있으면 우선 사용
+    if let Ok(custom_path) = std::env::var("TASKY_DB_PATH") {
+      return PathBuf::from(custom_path);
+    }
+
+    // 기본 경로 사용
     // Windows: %APPDATA%/tasky/tasky.db
     // Linux/Mac: ~/.local/share/tasky/tasky.db
     if let Some(data_dir) = dirs::data_dir() {
