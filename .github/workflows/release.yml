@@ -67,7 +67,7 @@ jobs:
         chmod +x "${{ matrix.name }}"
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.name }}
         path: ${{ matrix.name }}
@@ -81,7 +81,7 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Download all artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         path: artifacts
 
@@ -98,13 +98,12 @@ jobs:
         fi
 
     - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
+      uses: softprops/action-gh-release@v2
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: ${{ steps.tag.outputs.tag }}
-        release_name: Tasky ${{ steps.tag.outputs.tag }}
+        name: Tasky ${{ steps.tag.outputs.tag }}
         body: |
           ## 🎉 Tasky ${{ steps.tag.outputs.tag }} 릴리즈
 
@@ -148,45 +147,10 @@ jobs:
           - 견고한 데이터베이스 관리
 
           자세한 사용법은 [README](https://github.com/TechieQuokka/Tasky/blob/master/README.md)를 참조하세요.
+        files: |
+          artifacts/tasky-windows-x64.exe/tasky-windows-x64.exe
+          artifacts/tasky-linux-x64/tasky-linux-x64
+          artifacts/tasky-macos-x64/tasky-macos-x64
+          artifacts/tasky-macos-arm64/tasky-macos-arm64
         draft: false
         prerelease: false
-
-    - name: Upload Windows Binary
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: artifacts/tasky-windows-x64.exe/tasky-windows-x64.exe
-        asset_name: tasky-windows-x64.exe
-        asset_content_type: application/octet-stream
-
-    - name: Upload Linux Binary
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: artifacts/tasky-linux-x64/tasky-linux-x64
-        asset_name: tasky-linux-x64
-        asset_content_type: application/octet-stream
-
-    - name: Upload macOS Intel Binary
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: artifacts/tasky-macos-x64/tasky-macos-x64
-        asset_name: tasky-macos-x64
-        asset_content_type: application/octet-stream
-
-    - name: Upload macOS ARM Binary
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: artifacts/tasky-macos-arm64/tasky-macos-arm64
-        asset_name: tasky-macos-arm64
-        asset_content_type: application/octet-stream
