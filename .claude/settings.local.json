@@ -39,7 +39,9 @@
       "Bash(./target/debug/tasky list:*)",
       "Bash(./target/debug/tasky show:*)",
       "Bash(./target/debug/tasky add:*)",
-      "Bash(cargo test:*)"
+      "Bash(cargo test:*)",
+      "Bash(./target/debug/tasky:*)",
+      "Bash(sqlite3:*)"
     ],
     "deny": [],
     "ask": []
