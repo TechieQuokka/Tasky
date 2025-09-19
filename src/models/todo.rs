@@ -224,7 +224,9 @@ impl Todo {
     }
 
     if let Some(due_date) = self.due_date {
-      due_date < Utc::now()
+      let today_start = crate::utils::today_start();
+      // 오늘보다 이전 날짜만 overdue로 처리 (오늘은 제외)
+      due_date < today_start
     } else {
       false
     }

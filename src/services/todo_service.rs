@@ -181,11 +181,11 @@ impl TodoService for DefaultTodoService {
   }
 
   fn get_overdue_todos(&self) -> Result<Vec<Todo>> {
-      let now = chrono::Utc::now();
+      let today_start = crate::utils::today_start();
 
       let mut filter = TodoFilter::default();
       filter.status = Some(Status::Pending);
-      filter.due_before = Some(now);
+      filter.due_before = Some(today_start);
 
       self.list_todos(Some(filter), Some(SortBy::DueDate), Some(SortOrder::Asc))
   }
@@ -279,17 +279,33 @@ mod tests {
     #[test]
     fn test_overdue_todos() {
         let service = DefaultTodoService::in_memory().unwrap();
-        
+
         // 어제 마감인 할일 생성
         let yesterday = Utc::now() - Duration::days(1);
-        let create = CreateTodo::new("늦은 할일".to_string())
+        let create_overdue = CreateTodo::new("늦은 할일".to_string())
             .with_due_date(yesterday);
-        
-        service.create_todo(create).unwrap();
-        
-        // 기한 지난 할일 조회
+        service.create_todo(create_overdue).unwrap();
+
+        // 오늘 마감인 할일 생성 (overdue에 포함되지 않아야 함)
+        let today = crate::utils::today_start();
+        let create_today = CreateTodo::new("오늘 할일".to_string())
+            .with_due_date(today);
+        service.create_todo(create_today).unwrap();
+
+        // 내일 마감인 할일 생성 (overdue에 포함되지 않아야 함)
+        let tomorrow = Utc::now() + Duration::days(1);
+        let create_future = CreateTodo::new("내일 할일".to_string())
+            .with_due_date(tomorrow);
+        service.create_todo(create_future).unwrap();
+
+        // 기한 지난 할일 조회 (어제 것만 포함되어야 함)
         let overdue = service.get_overdue_todos().unwrap();
         assert_eq!(overdue.len(), 1);
         assert_eq!(overdue[0].title, "늦은 할일");
+
+        // 오늘 할일 조회
+        let today_todos = service.get_today_todos().unwrap();
+        assert_eq!(today_todos.len(), 1);
+        assert_eq!(today_todos[0].title, "오늘 할일");
     }
 }

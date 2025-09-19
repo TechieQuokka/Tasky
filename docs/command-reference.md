@@ -99,7 +99,7 @@ tasky list [OPTIONS]
 
 **특별 필터**:
 - `--today`: 오늘 마감인 할일만 표시
-- `--overdue`: 기한 초과된 할일만 표시
+- `--overdue`: 기한이 지난 할일만 표시 (오늘 마감은 제외)
 - `--urgent`: 긴급한 할일만 표시
 
 **상태 값**:
@@ -133,6 +133,20 @@ tasky list --today
 tasky list --overdue
 tasky list --urgent
 tasky list -s pending -p high
+```
+
+**특별 필터 상세 설명**:
+- `--today`: 오늘 날짜가 마감인 할일들만 표시
+- `--overdue`: 어제 이전 날짜가 마감인 할일들만 표시 (오늘 제외)
+- `--urgent`: 높은 우선순위이면서 마감일이 가까운 할일들
+
+> **참고**: `--overdue`는 당일 마감인 할일을 포함하지 않습니다. 당일 마감인 할일은 `--today` 옵션을 사용하세요.
+
+**날짜 필터링 예시**:
+```bash
+# 오늘이 2025-09-19라고 가정
+tasky list --today    # 2025-09-19 마감인 할일들
+tasky list --overdue  # 2025-09-18 이전 마감인 할일들
 ```
 
 **출력 형식**:
