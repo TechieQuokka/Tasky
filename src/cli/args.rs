@@ -18,7 +18,7 @@ pub enum Commands {
     description: Option<String>,
     #[arg(short, long, default_value = "medium")]
     priority: String,
-    #[arg(long)]
+    #[arg(long, allow_hyphen_values = true)]
     due: Option<String>,
   },
 
@@ -66,7 +66,7 @@ pub enum Commands {
     description: Option<String>,
     #[arg(short, long)]
     priority: Option<String>,
-    #[arg(long)]
+    #[arg(long, allow_hyphen_values = true)]
     due: Option<String>,
   },
 
