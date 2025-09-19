@@ -625,10 +625,10 @@ fn print_todos_table(todos: &[Todo]) {
     
     let due_cell = if let Some(due) = todo.due_date {
       let formatted = utils::format_date(&due);
-      if todo.is_overdue() {
-        Cell::new(&formatted).style_spec("Fr")
-      } else if let Some(days) = todo.days_until_due() {
-        if days <= 1 {
+      if let Some(days) = todo.days_until_due() {
+        if days < 0 {
+          Cell::new(&format!("{} ({}일 전)", formatted, -days)).style_spec("Fr")
+        } else if days <= 1 {
           Cell::new(&format!("{} ({}일 후)", formatted, days)).style_spec("Fy")
         } else {
           Cell::new(&format!("{} ({}일 후)", formatted, days))
@@ -685,10 +685,10 @@ fn print_todos_verbose(todos: &[Todo]) {
 
     if let Some(due) = todo.due_date {
       let formatted = utils::format_date(&due);
-      if todo.is_overdue() {
-        println!("마감일: {} {}", "⚠️".red(), formatted.red());
-      } else if let Some(days) = todo.days_until_due() {
-        if days <= 1 {
+      if let Some(days) = todo.days_until_due() {
+        if days < 0 {
+          println!("마감일: {} {} ({}일 전)", "⚠️".red(), formatted.red(), -days);
+        } else if days <= 1 {
           println!("마감일: {} ({}일 후)", formatted.yellow(), days);
         } else {
           println!("마감일: {} ({}일 후)", formatted, days);
