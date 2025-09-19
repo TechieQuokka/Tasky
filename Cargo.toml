@@ -17,6 +17,8 @@ thiserror = "1.0"
 colored = "2.0"  # 컬러 출력을 위해 추가
 prettytable-rs = "0.10"  # 테이블 형식 출력을 위해 추가
 dirs = "5.0"  # 시스템 디렉토리 경로를 위해 추가
+terminal_size = "0.2"  # 터미널 크기 감지를 위해 추가
+unicode-width = "0.1"  # 유니코드 문자 폭 계산을 위해 추가
 
 [dev-dependencies]
 tempfile = "3.0"

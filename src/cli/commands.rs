@@ -615,12 +615,13 @@ fn print_todos_table(todos: &[Todo]) {
       Priority::Low => "Fg",
     });
     
+    let truncated_title = utils::truncate_title_for_terminal(&todo.title);
     let title_cell = if todo.status == Status::Done {
-      Cell::new(&todo.title).style_spec("Fd")
+      Cell::new(&truncated_title).style_spec("Fd")
     } else if todo.is_overdue() {
-      Cell::new(&format!("⚠️  {}", todo.title)).style_spec("Fr")
+      Cell::new(&format!("⚠️  {}", truncated_title)).style_spec("Fr")
     } else {
-      Cell::new(&todo.title)
+      Cell::new(&truncated_title)
     };
     
     let due_cell = if let Some(due) = todo.due_date {

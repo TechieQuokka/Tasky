@@ -2,7 +2,30 @@ use chrono::{DateTime, Local, NaiveDate, TimeZone, Utc};
 
 use crate::error::{Result, TaskyError};
 
+fn parse_relative_date(date_str: &str) -> Option<i64> {
+    if date_str.starts_with('+') {
+        // +n 형식 (n일 후)
+        date_str[1..].parse::<i64>().ok()
+    } else if date_str.starts_with('-') {
+        // -n 형식 (n일 전)
+        date_str[1..].parse::<i64>().map(|n| -n).ok()
+    } else {
+        None
+    }
+}
+
 pub fn parse_date(date_str: &str) -> Result<DateTime<Utc>> {
+    // 상대적 날짜 형식 지원 (+n, -n)
+    if let Some(relative_days) = parse_relative_date(date_str) {
+        let today = Local::now().date_naive();
+        let target_date = today + chrono::Duration::days(relative_days);
+        let local_datetime = Local
+            .from_local_datetime(&target_date.and_hms_opt(0, 0, 0).unwrap())
+            .single()
+            .ok_or_else(|| TaskyError::InvalidDateFormat { date: date_str.to_string() })?;
+        return Ok(local_datetime.with_timezone(&Utc));
+    }
+
     // 다양한 날짜 형식을 지원
     let date_formats = vec![
         "%Y-%m-%d",        // ISO 형식: 2024-12-31
